@@ -35,14 +35,6 @@ public class GridController : MonoBehaviour
                 GridObjects[i][j].GetComponent<Renderer>().material = Unknown;
             }
         }
-
-        for (int i = 0; i < Robots.Length; i++)
-        {
-            RobotCurrentX = Robots[i].GetComponent<RobotController>().currentX;
-            RobotCurrentZ = Robots[i].GetComponent<RobotController>().currentZ;
-            SearchGrid[RobotCurrentX][RobotCurrentZ] = Robots[i].GetComponent<RobotController>().SearchGrid[RobotCurrentX][RobotCurrentZ];
-            GridObjects[RobotCurrentX][RobotCurrentZ].GetComponent<Renderer>().material = Searched;
-        }
     }
 
     // Update is called once per frame
