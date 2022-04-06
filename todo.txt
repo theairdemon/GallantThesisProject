@@ -1,0 +1,15 @@
+Simulation ToDo:
+- robot actual search algorithm
+- robot take data and adjust
+- obstacles!
+- drone predict robot location
+- test with 3+ robots
+
+Simulation Completed:
+- robot basic movement
+- grid system storage
+- robot spiral path
+- drone follow
+- drone stay with robot for time
+- drone collect robot data
+- drone send robot data

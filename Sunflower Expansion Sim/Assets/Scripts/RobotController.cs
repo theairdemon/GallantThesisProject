@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class RobotController : MonoBehaviour
 {
+    private int Speed;
     private int GridSize;
     public int[][] SearchGrid;
 
@@ -11,10 +12,8 @@ public class RobotController : MonoBehaviour
     public int currentZ;
 
     private int PathLength;
-    public Vector2[] PlannedPath;
-
-    private int Speed;
-
+    public List<Vector2> PlannedPath;
+    List<Vector2> PathHistory;
 
     // Start is called before the first frame update
     void Start()
@@ -34,11 +33,13 @@ public class RobotController : MonoBehaviour
         SearchGrid[currentX][currentZ] = 1;     // 1 will represent searched, non-obstacle areas
 
         PathLength = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetPathLength();
-        PlannedPath = new Vector2[PathLength];
+        PlannedPath = new List<Vector2>();
         //CreateRandomPath();
         //CreateSemiRandomPath();
-        PlannedPath[0] = new Vector2(currentX, currentZ);
+        PlannedPath.Add(new Vector2(currentX, currentZ));
         PlannedPath[1] = new Vector2(currentX, currentZ);
+        PathHistory = new List<Vector2>();
+        PathHistory.Add(PlannedPath[0]);
 
         Speed = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetSpeed();
     }
@@ -50,6 +51,39 @@ public class RobotController : MonoBehaviour
         SpiralPath_NoObstacles();
         //SimpleSLAM();
         MoveAlongPath_NoObstacles();
+    }
+
+    public int GetGridValue(int x, int z)
+    {
+        return SearchGrid[x][z];
+    }
+
+    public List<Vector2> GetPathHistory()
+    {
+        return PathHistory;
+    }
+
+    public void UpdateGrid(GameObject otherRobot, List<Vector2> otherPathHistory)
+    {
+        for (int i = 0; i < otherPathHistory.Count; i++)
+        {
+            int otherX = (int)otherPathHistory[i].x;
+            int otherZ = (int)otherPathHistory[i].y;
+            SearchGrid[otherX][otherZ] = otherRobot.GetComponent<RobotController>().GetGridValue(otherX, otherZ);
+        }
+    }
+
+    List<Vector2> AstarReconstructPath(Dictionary<Vector2, Vector2> cameFrom, Vector2 current)
+    {
+        Stack<Vector2> TotalPath = new Stack<Vector2>();
+        TotalPath.Push(current);
+        while (cameFrom.ContainsKey(current))
+        {
+            current = cameFrom[current];
+            TotalPath.Push(current);
+        }
+        List<Vector2> ListPath = new List<Vector2>(TotalPath);
+        return ListPath;
     }
 
     void MoveAlongPath_NoObstacles()
@@ -88,51 +122,7 @@ public class RobotController : MonoBehaviour
             currentX = PlannedX;
             currentZ = PlannedZ;
             SearchGrid[currentX][currentZ] = 1;
-
-            PlannedPath[0] = PlannedPath[1];
-            PlannedPath[1] = NextLocation(Spiral_Order[Spiral_Idx], PlannedPath[0]);
-            Spiral_Count_Moves += 1;
-
-            if (Spiral_Count_Moves == Spiral_Total_Moves ||
-                (PlannedPath[0].x < 0 || PlannedPath[0].x > GridSize - 1 || PlannedPath[0].y < 0 || PlannedPath[0].y > GridSize - 1))
-            {
-                Spiral_Count_Moves = 0;
-                Spiral_Idx = (Spiral_Idx + 1) % 4;
-                Debug.Log(Spiral_Order[Spiral_Idx]);
-
-                if (PlannedPath[0].x < 0 || PlannedPath[0].x > GridSize - 1 || PlannedPath[0].y < 0 || PlannedPath[0].y > GridSize - 1)
-                {
-                    PlannedPath[0] = NextLocation(Spiral_Order[Spiral_Idx], new Vector2(currentX, currentZ));
-                    PlannedPath[1] = NextLocation(Spiral_Order[Spiral_Idx], PlannedPath[0]);
-                }
-                else
-                {
-                    // update number of moves for the direction
-                    if (!Spiral_Change_Moves)
-                    {
-                        Spiral_Change_Moves = true;
-                    }
-                    else if (Spiral_Change_Moves)
-                    {
-                        Spiral_Change_Moves = false;
-                        Spiral_Total_Moves += 1;
-                    }
-                }                
-            }
-        }
-    }
-
-    void SimpleSLAM()
-    {
-        int PlannedX = (int)PlannedPath[0].x;
-        int PlannedZ = (int)PlannedPath[0].y;
-
-        if (this.transform.localPosition.x == PlannedX &&
-            this.transform.localPosition.z == PlannedZ)
-        {
-            currentX = PlannedX;
-            currentZ = PlannedZ;
-            SearchGrid[currentX][currentZ] = 1;
+            PathHistory.Add(new Vector2(currentX, currentZ));
 
             PlannedPath[0] = PlannedPath[1];
             PlannedPath[1] = NextLocation(Spiral_Order[Spiral_Idx], PlannedPath[0]);
@@ -143,6 +133,7 @@ public class RobotController : MonoBehaviour
             {
                 Spiral_Count_Moves = 0;
                 Spiral_Idx = (Spiral_Idx + 1) % 4;
+                //Debug.Log(Spiral_Order[Spiral_Idx]);
 
                 if (PlannedPath[1].x < 0 || PlannedPath[1].x > GridSize - 1 || PlannedPath[1].y < 0 || PlannedPath[1].y > GridSize - 1)
                 {
@@ -160,7 +151,7 @@ public class RobotController : MonoBehaviour
                         Spiral_Change_Moves = false;
                         Spiral_Total_Moves += 1;
                     }
-                }
+                }                
             }
         }
     }
