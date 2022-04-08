@@ -1,11 +1,11 @@
 Simulation ToDo:
-- robot actual search algorithm
-- robot take data and adjust
-- obstacles!
+- anytime planning
 - drone predict robot location
-- test with 3+ robots
 
 Simulation Completed:
+- obstacles!
+- test with 3+ robots
+- robot actual search algorithm
 - robot basic movement
 - grid system storage
 - robot spiral path

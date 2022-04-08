@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class DroneController : MonoBehaviour
 {
-    public float SpeedMult = 2.0f;
+    public float SpeedMult = 4.0f;
     private float MaxRobotTime = 4.0f;
     
     private int Speed;

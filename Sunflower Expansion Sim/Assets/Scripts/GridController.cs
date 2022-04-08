@@ -6,6 +6,8 @@ public class GridController : MonoBehaviour
 {
     public GameObject[] Robots;
     public GameObject GridNode;
+    public GameObject ObstacleObject;
+    public int NumObstacles;
     public Material Unknown;
     public Material Searched;
     public Material Obstacle;
@@ -35,13 +37,20 @@ public class GridController : MonoBehaviour
                 GridObjects[i][j].GetComponent<Renderer>().material = Unknown;
             }
         }
+
+        SpawnRandomObstacles();
     }
 
     // Update is called once per frame
     void Update()
     {
+        UpdateGrid();
+    }
+
+    void UpdateGrid()
+    {
         for (int i = 0; i < Robots.Length; i++)
-        {            
+        {
             for (int j = 0; j < GridSize; j++)
             {
                 for (int k = 0; k < GridSize; k++)
@@ -52,6 +61,17 @@ public class GridController : MonoBehaviour
                         GridObjects[j][k].GetComponent<Renderer>().material = Obstacle;
                 }
             }
+        }
+    }
+
+    void SpawnRandomObstacles()
+    {
+        for (int i = 0; i < NumObstacles; i++)
+        {
+            int RandomX = (int)Random.Range(0, GridSize);
+            int RandomZ = (int)Random.Range(0, GridSize);
+            Vector3 RandomLocation = new Vector3(RandomX, 1, RandomZ) + this.transform.parent.position;
+            Instantiate(ObstacleObject, RandomLocation, Quaternion.identity);
         }
     }
 }
