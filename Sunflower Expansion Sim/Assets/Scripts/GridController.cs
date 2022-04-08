@@ -40,7 +40,7 @@ public class GridController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < Robots.Length; i++)
         {            
             for (int j = 0; j < GridSize; j++)
             {

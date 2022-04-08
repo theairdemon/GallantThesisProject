@@ -32,27 +32,30 @@ public class RobotController : MonoBehaviour
         currentZ = Mathf.RoundToInt(this.transform.localPosition.z);
         SearchGrid[currentX][currentZ] = 1;     // 1 will represent searched, non-obstacle areas
 
-        PathLength = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetPathLength();
-        PlannedPath = new List<Vector2>();
-        //CreateRandomPath();
-        //CreateSemiRandomPath();
-        PlannedPath.Add(new Vector2(currentX, currentZ));
-        PlannedPath[1] = new Vector2(currentX, currentZ);
+        Vector2 RandomGoal = GetRandomGoal();
+        PlannedPath = AstarSearch(new Vector2(currentX, currentZ), RandomGoal);
         PathHistory = new List<Vector2>();
         PathHistory.Add(PlannedPath[0]);
 
         Speed = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetSpeed();
     }
 
+    int PathIdx = 0;
     // Update is called once per frame
     void Update()
     {
         //RandomPath_NoObstacles();
-        SpiralPath_NoObstacles();
+        //SpiralPath_NoObstacles();
         //SimpleSLAM();
-        MoveAlongPath_NoObstacles();
+        //MoveAlongPath_NoObstacles();
+
+        RunAstarSearch();
+        MoveAlongPath_Astar_NoObstacles();
     }
 
+    // ===================================
+    // GRID UPDATES
+    // ===================================
     public int GetGridValue(int x, int z)
     {
         return SearchGrid[x][z];
@@ -73,6 +76,57 @@ public class RobotController : MonoBehaviour
         }
     }
 
+    // ===================================
+    // A* SEARCH
+    // ===================================
+    void RunAstarSearch()
+    {
+        int PlannedX = (int)PlannedPath[PathIdx].x;
+        int PlannedZ = (int)PlannedPath[PathIdx].y;
+        Vector3 localTarget = new Vector3(PlannedX, this.transform.localPosition.y, PlannedZ);
+        if (this.transform.localPosition == localTarget)
+        {
+            PathIdx += 1;
+            SearchGrid[PlannedX][PlannedZ] = 1;
+            PathHistory.Add(new Vector2(PlannedX, PlannedZ));
+        }            
+
+        if (PathIdx == PlannedPath.Count - 1)
+        {
+            Vector2 RandomGoal = GetRandomGoal();
+            PlannedPath = AstarSearch(new Vector2(PlannedPath[PathIdx].x, PlannedPath[PathIdx].y), RandomGoal);
+            PathIdx = 0;
+        }
+
+    }
+
+    void MoveAlongPath_Astar_NoObstacles()
+    {
+        int PlannedX = (int)PlannedPath[PathIdx].x;
+        int PlannedZ = (int)PlannedPath[PathIdx].y;
+        Vector3 localTarget = new Vector3(PlannedX, this.transform.localPosition.y, PlannedZ);
+        Vector3 globalTarget = localTarget + this.transform.parent.position;
+        this.transform.position = Vector3.MoveTowards(this.transform.position, globalTarget, Speed * Time.deltaTime);
+    }
+
+    Vector2 GetRandomGoal()
+    {
+        int RandomX = (int)Random.Range(0, GridSize);
+        int RandomZ = (int)Random.Range(0, GridSize);
+        Vector2 RandomGoal = new Vector2(RandomX, RandomZ);
+        int loops = 0;
+        while (SearchGrid[RandomX][RandomZ] != 0)
+        {
+            if (loops >= GridSize * GridSize + 100)
+                break;
+            loops += 1;
+            RandomX = (int)Random.Range(0, GridSize);
+            RandomZ = (int)Random.Range(0, GridSize);
+            RandomGoal = new Vector2(RandomX, RandomZ);
+        }
+        return RandomGoal;
+    }
+
     List<Vector2> AstarReconstructPath(Dictionary<Vector2, Vector2> cameFrom, Vector2 current)
     {
         Stack<Vector2> TotalPath = new Stack<Vector2>();
@@ -86,6 +140,78 @@ public class RobotController : MonoBehaviour
         return ListPath;
     }
 
+    List<Vector2> AstarSearch(Vector2 start, Vector2 goal)
+    {
+        SortedList<float, Vector2> toExplore = new SortedList<float, Vector2>();
+        toExplore.Add(0, start);
+
+        Dictionary<Vector2, Vector2> cameFrom = new Dictionary<Vector2, Vector2>();
+
+        Dictionary<Vector2, int> gScore = new Dictionary<Vector2, int>();
+        gScore[start] = 0;
+        Dictionary<Vector2, float> fScore = new Dictionary<Vector2, float>();
+        fScore[start] = Manhattan(start, goal);
+
+        while (toExplore.Count > 0)
+        {
+            Vector2 current = toExplore.Values[0];
+            if (current == goal)
+                return AstarReconstructPath(cameFrom, current);
+            toExplore.RemoveAt(0);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Vector2 neighbor = NextLocation(i, current);
+                if (neighbor.x < 0 || neighbor.x > GridSize - 1 || neighbor.y < 0 || neighbor.y > GridSize - 1)
+                    continue;
+                else if (SearchGrid[(int)neighbor.x][(int)neighbor.y] == 2)
+                    continue;
+
+                int tempGScore = gScore[current] + 1;
+
+                if (!gScore.ContainsKey(neighbor))
+                    gScore[neighbor] = 10000;
+                
+                if (tempGScore < gScore[neighbor])
+                {
+                    cameFrom[neighbor] = current;
+                    gScore[neighbor] = tempGScore;
+                    // fScore = gScore + heuristic + try to avoid (when possible) going over places you've already been
+                    fScore[neighbor] = tempGScore + Manhattan(neighbor, goal) 
+                        + (SearchGrid[(int)neighbor.x][(int)neighbor.y] * 1000);
+                    while (toExplore.ContainsKey(fScore[neighbor]))
+                        fScore[neighbor] += 0.001f;
+                    toExplore.Add(fScore[neighbor], neighbor);
+                }
+            }
+        }
+
+        return new List<Vector2>();
+    }
+
+    int Manhattan(Vector2 point1, Vector2 point2)
+    {
+        return ((int) (Mathf.Abs(point1.x - point2.x) + Mathf.Abs(point1.y - point2.y)));
+    }
+
+    private Vector2 NextLocation(int direction, Vector2 currentLocation)
+    {
+        Vector2 nextLocation = currentLocation;
+        if (direction == 0)
+            nextLocation.x -= 1;
+        else if (direction == 1)
+            nextLocation.x += 1;
+        else if (direction == 2)
+            nextLocation.y -= 1;
+        else if (direction == 3)
+            nextLocation.y += 1;
+
+        return nextLocation;
+    }
+
+    // ===================================
+    // BEFORE A* WAS ADDED
+    // ===================================
     void MoveAlongPath_NoObstacles()
     {
         int PlannedX = (int) PlannedPath[0].x;
@@ -155,28 +281,6 @@ public class RobotController : MonoBehaviour
             }
         }
     }
-
-    private Vector2 NextLocation(int direction, Vector2 currentLocation)
-    {
-        Vector2 nextLocation = currentLocation;
-        if (direction == 0)
-            nextLocation.x -= 1;
-        else if (direction == 1)
-            nextLocation.x += 1;
-        else if (direction == 2)
-            nextLocation.y -= 1;
-        else if (direction == 3)
-            nextLocation.y += 1;
-
-        // Error handling to avoid leaving the grid
-        //if (nextLocation.x < 0 || nextLocation.x > GridSize - 1 || nextLocation.y < 0 || nextLocation.y > GridSize - 1)
-        //{
-        //    return NextLocation(Spiral_Order[(direction + 1) % 4], currentLocation);
-        //}
-
-        return nextLocation;
-    }
-
 
     void RandomPath_NoObstacles()
     {

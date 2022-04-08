@@ -1,0 +1,9 @@
+- no laser beam: we know the drone is able to search for and find the robots, as shown in the Sunflower paper. Adding the exact laser communication and searching system to the simulation adds unnecessary complexity
+
+- grid system: a simplification of how the robots would move through real-world space. Helps with visualization, and would be time-intensive to replace with another system.
+
+- robot coordinates: similar to the grid system, it's a simple version of the complex real-world application. Since the drone can have GPS, and it will know its height above the water + the angle of the laser, it can compute the robot's location and update it while they are in communication. Again, it adds too much time for the scope of this project
+ 
+- A* search: an example of a search algorithm that could be used here. Like in the "Anytime Planning" paper, the actual mapping algorithm is not as important as the overall algorithm tying the system together
+
+- models: didn't want to find and get permission from sources for drone and robot models
