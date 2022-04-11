@@ -6,9 +6,17 @@ public class RobotInfo : MonoBehaviour
 {
     public GameObject Grid;
 
+    public int Runtime = 0;
+    public bool DoAdjustPath = false;
     public int GridSize = 0;
     public int PathLength = 0;
     public int Speed = 0;
+    public int RandomSeed = 42;
+
+    public int GetRuntime()
+    {
+        return Runtime;
+    }
 
     public GameObject GetGrid()
     {
@@ -28,5 +36,15 @@ public class RobotInfo : MonoBehaviour
     public int GetSpeed()
     {
         return Speed;
+    }
+
+    public int GetRandomSeed()
+    {
+        return RandomSeed;
+    }
+
+    public bool GetDoAdjustPath()
+    {
+        return DoAdjustPath;
     }
 }

@@ -22,6 +22,8 @@ public class GridController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Random.InitState(this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
+
         GridSize = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetGridSize();
         SearchGrid = new int[GridSize][];
         GridObjects = new GameObject[GridSize][];
@@ -56,12 +58,35 @@ public class GridController : MonoBehaviour
                 for (int k = 0; k < GridSize; k++)
                 {
                     if (Robots[i].GetComponent<RobotController>().GetGridValue(j, k) == 1)
+                    {
                         GridObjects[j][k].GetComponent<Renderer>().material = Searched;
+                        SearchGrid[j][k] = Robots[i].GetComponent<RobotController>().GetGridValue(j, k);
+                    }                        
                     else if (Robots[i].GetComponent<RobotController>().GetGridValue(j, k) == 2)
+                    {
                         GridObjects[j][k].GetComponent<Renderer>().material = Obstacle;
+                        SearchGrid[j][k] = Robots[i].GetComponent<RobotController>().GetGridValue(j, k);
+                    }
+                        
                 }
             }
         }
+    }
+
+    public float PercentCompletion()
+    {
+        float totalGridNodes = GridSize * GridSize;
+        float numExplored = 0;
+        for (int j = 0; j < GridSize; j++)
+        {
+            for (int k = 0; k < GridSize; k++)
+            {
+                if (SearchGrid[j][k] != 0)
+                    numExplored += 1;
+            }
+        }
+        float percentExplored = (numExplored / totalGridNodes) * 100;
+        return percentExplored;
     }
 
     void SpawnRandomObstacles()

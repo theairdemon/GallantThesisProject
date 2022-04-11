@@ -4,23 +4,38 @@ using UnityEngine;
 
 public class RobotController : MonoBehaviour
 {
+    public int RandomModifer = 0;
     private int Speed;
     private int GridSize;
     public int[][] SearchGrid;
 
-    public int currentX;
-    public int currentZ;
+    private int currentX;
+    private int currentZ;
 
     // Path variables
     private int PathLength;
     public List<Vector2> PlannedPath;
     List<Vector2> PathHistory;
     List<Vector2> GoalLocations;
-    int PathIdx = 0;
+    public int PathIdx = 0;
+    
+
+    // Information received from drone about other robots
+    List<List<Vector2>> OtherPlannedPaths;
+    List<GameObject> OtherRobots;
+    List<int> OtherIndices;
+
+    bool DoAdjustPath;
+    int NumRobotCollisions;
 
     // Start is called before the first frame update
     void Start()
     {
+        DoAdjustPath = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoAdjustPath();
+        Random.InitState(RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
+        NumRobotCollisions = 0;
+
+        // SearchGrid
         GridSize = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetGridSize();
         SearchGrid = new int[GridSize][];
         GoalLocations = new List<Vector2>();
@@ -37,8 +52,20 @@ public class RobotController : MonoBehaviour
         currentZ = Mathf.RoundToInt(this.transform.localPosition.z);
         SearchGrid[currentX][currentZ] = 1;     // 1 will represent searched, non-obstacle areas
 
-        Vector2 RandomGoal = GetRandomGoal();
-        PlannedPath = AstarSearch(new Vector2(currentX, currentZ), RandomGoal);
+        // Robot States
+        OtherPlannedPaths = new List<List<Vector2>>();
+        OtherRobots = new List<GameObject>();
+        OtherIndices = new List<int>();
+
+        // PlannedPath
+        PathLength = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetPathLength();
+        PlannedPath = new List<Vector2>();
+        PlannedPath.Add(new Vector2(currentX, currentZ));
+        for (int i = 0; i < PathLength; i++)
+        {
+            Vector2 RandomGoal = GetRandomGoal();
+            PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
+        }
         PathHistory = new List<Vector2>();
         PathHistory.Add(PlannedPath[0]);
 
@@ -47,13 +74,10 @@ public class RobotController : MonoBehaviour
 
     void Update()
     {
-        //RandomPath_NoObstacles();
-        //SpiralPath_NoObstacles();
-        //SimpleSLAM();
-        //MoveAlongPath_NoObstacles();
-
         RunAstarSearch();
-        MoveAlongPath_Astar_NoObstacles();
+        MoveAlongPath_Astar();
+        if (DoAdjustPath)
+            AdjustPath();
     }
 
     // ===================================
@@ -64,69 +88,143 @@ public class RobotController : MonoBehaviour
         return SearchGrid[x][z];
     }
 
-    public List<Vector2> GetPathHistory()
+    public List<Vector2> GetPathHistory(int StartingIndex)
     {
-        return PathHistory;
+        return PathHistory.GetRange(StartingIndex, PathHistory.Count - StartingIndex);
     }
 
-    public void UpdateGrid(GameObject otherRobot, List<Vector2> otherPathHistory)
+    public List<Vector2> GetPlannedPath()
     {
+        return PlannedPath;
+    }
+
+    public int GetPathIndex()
+    {
+        return PathIdx;
+    }
+
+    public int GetCollisions()
+    {
+        return NumRobotCollisions;
+    }
+
+    public void UpdateGrid(GameObject otherRobot, List<Vector2> otherPathHistory, List<Vector2> otherPlannedPath, int otherIdx)
+    {
+        // Store robots, plannedpaths, and get their index
+        int robotIdx;
+        if (!OtherRobots.Contains(otherRobot))
+        {
+            OtherRobots.Add(otherRobot);
+            OtherIndices.Add(otherIdx);
+            robotIdx = OtherRobots.Count - 1;
+            OtherPlannedPaths.Add(otherPlannedPath);
+        }
+        else
+        {
+            robotIdx = OtherRobots.IndexOf(otherRobot);
+            OtherIndices[robotIdx] = otherIdx;
+            OtherPlannedPaths[robotIdx] = otherPlannedPath;
+        }            
+        
+        // Store the most recent path history
         for (int i = 0; i < otherPathHistory.Count; i++)
         {
             int otherX = (int)otherPathHistory[i].x;
             int otherZ = (int)otherPathHistory[i].y;
             SearchGrid[otherX][otherZ] = otherRobot.GetComponent<RobotController>().GetGridValue(otherX, otherZ);
+            if (GoalLocations.Contains(new Vector2(otherX, otherZ)))
+                GoalLocations.Remove(new Vector2(otherX, otherZ));
         }
     }
 
     // ===================================
     // OBSTACLES
     // ===================================
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider collider)
     {
-        int StartX, StartZ;
-        if (PathIdx > 0)
+        int StartX = (int)PathHistory[PathHistory.Count - 1].x;
+        int StartZ = (int)PathHistory[PathHistory.Count - 1].y;
+        int PlannedX = (int)PlannedPath[PathIdx].x;
+        int PlannedZ = (int)PlannedPath[PathIdx].y;
+
+        if (collider.gameObject.tag == "Obstacle")
         {
-            StartX = (int)PlannedPath[PathIdx - 1].x;
-            StartZ = (int)PlannedPath[PathIdx - 1].y;
+            SearchGrid[PlannedX][PlannedZ] = 2;
+            if (PathHistory[PathHistory.Count - 1] != new Vector2(PlannedX, PlannedZ))
+                PathHistory.Add(new Vector2(PlannedX, PlannedZ));
+            if (GoalLocations.Contains(new Vector2(PlannedX, PlannedZ)))
+                GoalLocations.Remove(new Vector2(PlannedX, PlannedZ));
+            // remove the collision location
+            PlannedPath.RemoveAt(PathIdx);
+            // insert new search at current index
+            PlannedPath.InsertRange(PathIdx, AstarSearch(PlannedPath[PathIdx - 1], PlannedPath[PathIdx]));
+            // remove double of previous location
+            PlannedPath.RemoveAt(PathIdx - 1);
         }
         else
         {
-            StartX = (int)PlannedPath[PathIdx].x;
-            StartZ = (int)PlannedPath[PathIdx].y;
+            NumRobotCollisions++;
+            PlannedPath = new List<Vector2>();
+            PlannedPath.Add(new Vector2(StartX, StartZ));
+            for (int i = 0; i < PathLength; i++)
+            {
+                Vector2 RandomGoal = GetRandomGoal();
+                PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
+            }
+            PathIdx = 0;
         }
 
-        if (collision.gameObject.tag == "Obstacle")
-        {
-            int PlannedX = (int)PlannedPath[PathIdx].x;
-            int PlannedZ = (int)PlannedPath[PathIdx].y;
-            SearchGrid[PlannedX][PlannedZ] = 2;
-            if (GoalLocations.Contains(new Vector2(PlannedX, PlannedZ)))
-                GoalLocations.Remove(new Vector2(PlannedX, PlannedZ));
-        }
-        Vector2 RandomGoal = GetRandomGoal();
-        PlannedPath = AstarSearch(new Vector2(StartX, StartZ), RandomGoal);
-        PathIdx = 0;
+        //RunAstarSearch();
+        //MoveAlongPath_Astar();
     }
 
     // ===================================
     // ANYTIME PLANNING
-    // Source: Anytime Planning for Decentralized Multirobot Active Information Gathering, Schlotfeldt et. al.
+    // Source: Anytime Planning for Decentralized Multirobot 
+    // Active Information Gathering, Schlotfeldt et. al.
     // ===================================
-    void AnytimePlanning()
+    void AdjustPath()
     {
-        AnytimeRVI();
-        ImprovePath();
+        int otherPathIdx, commonMovesLeft;
+        for (int i = 0; i < OtherIndices.Count; i++)
+        {
+            otherPathIdx = OtherIndices[i];
+            commonMovesLeft = Mathf.Min((PlannedPath.Count - PathIdx), (OtherPlannedPaths[i].Count - otherPathIdx)) - 1;
+
+            if (commonMovesLeft <= 0)
+                continue;
+
+            for (int j = 1; j < commonMovesLeft; j++)
+            {
+                Vector2 currentRobotMove = PlannedPath[PathIdx + j];
+                Vector2 otherRobotMove = OtherPlannedPaths[i][otherPathIdx + j];
+
+                // if same location
+                if (currentRobotMove == otherRobotMove && j < commonMovesLeft - 1)
+                {
+                    //Debug.Log(currentRobotMove.ToString() + " in " + j.ToString() + " moves");
+                    // remove the collision location
+                    PlannedPath.RemoveAt(PathIdx + j);
+                    // temporarily set collision location as an obstacle
+                    int tempGridValue = SearchGrid[(int)otherRobotMove.x][(int)otherRobotMove.y];
+                    SearchGrid[(int)otherRobotMove.x][(int)otherRobotMove.y] = 2;
+                    // insert new search at current index
+                    PlannedPath.InsertRange(PathIdx + j, AstarSearch(PlannedPath[PathIdx + j - 1], PlannedPath[PathIdx + j]));
+                    // remove double of previous location
+                    PlannedPath.RemoveAt(PathIdx + j - 1);
+                    // reset location value at collision location
+                    SearchGrid[(int)otherRobotMove.x][(int)otherRobotMove.y] = tempGridValue;
+                }
+            }
+        }
     }
 
-    void AnytimeRVI()
+    void MoveOtherIndices()
     {
-
-    }
-
-    void ImprovePath()
-    {
-
+        for (int i = 0; i < OtherIndices.Count; i++)
+        {
+            OtherIndices[i] = Mathf.Min(OtherPlannedPaths[i].Count - 1, OtherIndices[i] + 1);
+        }
     }
 
     // ===================================
@@ -136,28 +234,40 @@ public class RobotController : MonoBehaviour
     {
         int PlannedX = (int)PlannedPath[PathIdx].x;
         int PlannedZ = (int)PlannedPath[PathIdx].y;
-        Vector3 localTarget = new Vector3(PlannedX, this.transform.localPosition.y, PlannedZ);
+        Vector3 localTarget = new Vector3(PlannedX, 1, PlannedZ);
         if (this.transform.localPosition == localTarget)
         {
             PathIdx += 1;
-            SearchGrid[PlannedX][PlannedZ] = 1;
-            PathHistory.Add(new Vector2(PlannedX, PlannedZ));
-        }            
+            MoveOtherIndices();
 
-        if (PathIdx == PlannedPath.Count - 1)
-        {
-            Vector2 RandomGoal = GetRandomGoal();
-            PlannedPath = AstarSearch(new Vector2(PlannedPath[PathIdx].x, PlannedPath[PathIdx].y), RandomGoal);
-            PathIdx = 0;
+            if (GoalLocations.Contains(new Vector2(PlannedX, PlannedZ)))
+                GoalLocations.Remove(new Vector2(PlannedX, PlannedZ));
+            if (SearchGrid[PlannedX][PlannedZ] == 0)
+                SearchGrid[PlannedX][PlannedZ] = 1;
+
+            if (PathHistory[PathHistory.Count - 1] != new Vector2(PlannedX, PlannedZ))
+                PathHistory.Add(new Vector2(PlannedX, PlannedZ));
+
+            if (PathIdx == PlannedPath.Count - 1)
+            {
+                PlannedPath = new List<Vector2>();
+                PlannedPath.Add(new Vector2(PlannedX, PlannedZ));
+                for (int i = 0; i < PathLength; i++)
+                {
+                    Vector2 RandomGoal = GetRandomGoal();
+                    PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
+                }
+                PathIdx = 0;
+                MoveOtherIndices();
+            }
         }
-
     }
 
-    void MoveAlongPath_Astar_NoObstacles()
+    void MoveAlongPath_Astar()
     {
         int PlannedX = (int)PlannedPath[PathIdx].x;
         int PlannedZ = (int)PlannedPath[PathIdx].y;
-        Vector3 localTarget = new Vector3(PlannedX, this.transform.localPosition.y, PlannedZ);
+        Vector3 localTarget = new Vector3(PlannedX, 1, PlannedZ);
         Vector3 globalTarget = localTarget + this.transform.parent.position;
         this.transform.position = Vector3.MoveTowards(this.transform.position, globalTarget, Speed * Time.deltaTime);
     }
@@ -180,6 +290,7 @@ public class RobotController : MonoBehaviour
         TotalPath.Push(current);
         while (cameFrom.ContainsKey(current))
         {
+            //SearchGrid[(int)current.x][(int)current.y] = 1;
             current = cameFrom[current];
             TotalPath.Push(current);
         }
