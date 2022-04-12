@@ -14,8 +14,16 @@ Collisions: 1, 3, 4, 4, 0
 Collisions: 10, 3, 3, 8, 4
 
 800 seconds, 100x100, With AdjustPath()
-% explored
-Collisions:
+77.08% explored
+Collisions: 1, 1, 4, 5, 3
+=======================================
+1000 seconds, 100x100, No AdjustPath()
+81.23% explored
+Collisions: 5, 2, 8, 13, 8
+
+1000 seconds, 100x100, With AdjustPath()
+83.47% explored
+Collisions: 1, 4, 4, 4, 3
 =======================================
 800 seconds, 150x150, No AdjustPath()
 46.11% explored
@@ -24,12 +32,4 @@ Collisions: 1, 1, 4, 3, 3
 800 seconds, 150x150, With AdjustPath()
 46.48% explored
 Collisions: 1, 0, 0, 1, 0
-=======================================
-1200 seconds, 150x150, No AdjustPath()
-57.46% explored
-Collisions: 2, 3, 3, 3, 3
-
-1200 seconds, 150x150, With AdjustPath()
-55.74% explored
-Collisions: 3, 6, 2, 1, 4
 =======================================

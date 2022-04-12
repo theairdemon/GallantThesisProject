@@ -201,6 +201,8 @@ public class RobotController : MonoBehaviour
 
             for (int j = 1; j < commonMovesLeft; j++)
             {
+                if (PathIdx + j > PlannedPath.Count - 1 || otherPathIdx + j > OtherPlannedPaths[i].Count - 1)
+                    break;
                 Vector2 currentRobotMove = PlannedPath[PathIdx + j];
                 Vector2 otherRobotMove = OtherPlannedPaths[i][otherPathIdx + j];
 
