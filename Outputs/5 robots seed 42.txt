@@ -1,0 +1,35 @@
+=======================================
+5 Robots, Seed 42
+=======================================
+600 seconds, 100x100, No AdjustPath()
+66.41% explored
+Collisions: 9, 9, 4, 2, 6
+
+600 seconds, 100x100, With AdjustPath()
+68.96% explored
+Collisions: 1, 3, 4, 4, 0
+=======================================
+800 seconds, 100x100, No AdjustPath()
+74.91% explored
+Collisions: 10, 3, 3, 8, 4
+
+800 seconds, 100x100, With AdjustPath()
+% explored
+Collisions:
+=======================================
+800 seconds, 150x150, No AdjustPath()
+46.11% explored
+Collisions: 1, 1, 4, 3, 3
+
+800 seconds, 150x150, With AdjustPath()
+46.48% explored
+Collisions: 1, 0, 0, 1, 0
+=======================================
+1200 seconds, 150x150, No AdjustPath()
+57.46% explored
+Collisions: 2, 3, 3, 3, 3
+
+1200 seconds, 150x150, With AdjustPath()
+55.74% explored
+Collisions: 3, 6, 2, 1, 4
+=======================================

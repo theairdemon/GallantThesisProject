@@ -76,8 +76,6 @@ public class RobotController : MonoBehaviour
     {
         RunAstarSearch();
         MoveAlongPath_Astar();
-        if (DoAdjustPath)
-            AdjustPath();
     }
 
     // ===================================
@@ -135,6 +133,9 @@ public class RobotController : MonoBehaviour
             if (GoalLocations.Contains(new Vector2(otherX, otherZ)))
                 GoalLocations.Remove(new Vector2(otherX, otherZ));
         }
+
+        if (DoAdjustPath)
+            AdjustPath();
     }
 
     // ===================================
@@ -174,14 +175,18 @@ public class RobotController : MonoBehaviour
             PathIdx = 0;
         }
 
-        //RunAstarSearch();
-        //MoveAlongPath_Astar();
+        if (DoAdjustPath)
+            AdjustPath();
     }
 
     // ===================================
     // ANYTIME PLANNING
     // Source: Anytime Planning for Decentralized Multirobot 
     // Active Information Gathering, Schlotfeldt et. al.
+    //
+    // This algorithm is a modified version of ImprovePath() from
+    // the paper, since we cannot actually be in constant communication
+    // between our robots in this system
     // ===================================
     void AdjustPath()
     {
@@ -259,6 +264,8 @@ public class RobotController : MonoBehaviour
                 }
                 PathIdx = 0;
                 MoveOtherIndices();
+                if (DoAdjustPath)
+                    AdjustPath();
             }
         }
     }

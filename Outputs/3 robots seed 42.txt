@@ -1,22 +1,13 @@
 =======================================
 3 Robots, Seed 42
-*** rerun the first 2 tests with the modified random seeds
-=======================================
-300 seconds, 50x50, No AdjustPath()
-56.32% explored
-Collisions: 6, 7, 9
-
-300 seconds, 50x50, With AdjustPath()
-58.00% explored
-Collisions: 6, 1, 5
 =======================================
 400 seconds, 50x50, No AdjustPath()
-64.80% explored
-Collisions: 8, 6, 6
+89.13% explored
+Collisions: 5, 2, 3
 
 400 seconds, 50x50, With AdjustPath()
-72.88% explored
-Collisions: 5, 4, 1
+88.64% explored
+Collisions: 2, 5, 3
 =======================================
 600 seconds, 100x100, No AdjustPath()
 51.82% explored
@@ -25,4 +16,12 @@ Collisions: 8, 3, 5
 600 seconds, 100x100, With AdjustPath()
 52.13% explored
 Collisions: 2, 1, 1
+=======================================
+800 seconds, 100x100, No AdjustPath()
+59.05% explored
+Collisions: 7, 4, 3
+
+800 seconds, 100x100, With AdjustPath()
+60.05% explored
+Collisions: 1, 4, 3
 =======================================
