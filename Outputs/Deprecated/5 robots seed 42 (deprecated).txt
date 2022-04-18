@@ -1,0 +1,49 @@
+
+600 seconds, 100x100, No SendData(), No AdjustPath()
+67.82% explored
+Collisions: 9, 4, 5, 10, 0; 28
+
+600 seconds, 100x100, With SendData(), No AdjustPath()
+68.39% explored
+Collisions: 7, 3, 5, 2, 1; 18
+
+600 seconds, 100x100, With SendData(), With AdjustPath()
+68.94% explored
+Collisions: 4, 2, 2, 3, 1; 12
+=======================================
+800 seconds, 100x100, No SendData(), No AdjustPath()
+82.82% explored
+Collisions: 4, 11, 1, 8, 4; 28
+
+800 seconds, 100x100, With SendData(), No AdjustPath()
+78.44% explored
+Collisions: 2, 3, 4, 1, 0; 10
+
+800 seconds, 100x100, With SendData(), With AdjustPath()
+75.73% explored
+Collisions: 2, 1, 0, 2, 1; 6
+=======================================
+1000 seconds, 100x100, No SendData(), No AdjustPath()
+87.88% explored
+Collisions: 4, 3, 3, 2, 4; 16
+
+1000 seconds, 100x100, With SendData(), No AdjustPath()
+86.55% explored
+Collisions: 0, 4, 3, 6, 7; 20
+
+1000 seconds, 100x100, With SendData(), With AdjustPath()
+86.51% explored
+Collisions: 2, 8, 4, 8, 6; 28
+=======================================
+800 seconds, 150x150, No SendData(), No AdjustPath()
+% explored
+Collisions: 
+
+800 seconds, 150x150, With SendData(), No AdjustPath()
+% explored
+Collisions: 
+
+800 seconds, 150x150, With SendData(), With AdjustPath()
+% explored
+Collisions: 
+=======================================

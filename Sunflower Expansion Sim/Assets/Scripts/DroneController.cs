@@ -8,6 +8,7 @@ public class DroneController : MonoBehaviour
     public float MaxRobotTime = 4.0f;
 
     private int Runtime;
+    private int CurrentTime;
     private int Speed;
     private Transform[] Robots;
     private List<Vector2>[] RobotPathHistory;
@@ -18,11 +19,15 @@ public class DroneController : MonoBehaviour
     private int nextRobot;
     private float CurrentRobotTime = 0.0f;
     private bool ReceiveData = true;
+    private bool DoSendData;
+    private bool CanMove;
 
     // Start is called before the first frame update
     void Start()
     {
+        DoSendData = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoSendData();
         Runtime = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRuntime();
+        CurrentTime = 0;
         // estimating the speed multiplier in the air vs water
         Speed = (int)SpeedMult * this.transform.parent.gameObject.GetComponent<RobotInfo>().GetSpeed();
 
@@ -43,21 +48,25 @@ public class DroneController : MonoBehaviour
         }
         nextRobot = 0;
 
-        StartCoroutine(CompleteSimulation());
+        //StartCoroutine(CompleteSimulation());
     }
 
-    IEnumerator CompleteSimulation()
+    public void CompleteSimulation()
     {
-        yield return new WaitForSeconds(Runtime); //wait 5 seconds
+        //yield return new WaitForSeconds(Runtime); //wait 5 seconds
         //Application.Quit();
-        Debug.Log("Ran for " + Runtime.ToString() + " seconds");
+        Debug.Log("Ran for " + Runtime.ToString() + " moves");
         Debug.Log("Percent Explored:");
         Debug.Log(this.transform.parent.GetChild(0).gameObject.GetComponent<GridController>().PercentCompletion().ToString("F2"));
         Debug.Log("Robot collisions:");
+        int totalCollisions = 0;
         for (int i = 0; i < numRobots; i++)
         {
+            totalCollisions += Robots[i].gameObject.GetComponent<RobotController>().GetCollisions();
             Debug.Log("#" + (i + 1).ToString() + ": " + Robots[i].gameObject.GetComponent<RobotController>().GetCollisions().ToString());
         }
+        Debug.Log("Total Collisions: " + totalCollisions.ToString());
+
         Debug.Break();
     }
 
@@ -65,6 +74,8 @@ public class DroneController : MonoBehaviour
     void Update()
     {
         MoveToRobot();
+        // stabilization
+        CheckMoveNow();
     }
 
     void MoveToRobot()
@@ -78,16 +89,20 @@ public class DroneController : MonoBehaviour
             this.transform.position.z == globalTarget.z)
         {
             CurrentRobotTime += Time.deltaTime;
-            if (CurrentRobotTime == Time.deltaTime)
+            if (DoSendData)
             {
-                TransmitRobotData();
+                if (CurrentRobotTime == Time.deltaTime)
+                {
+                    TransmitRobotData();
+                }
+                else if (ReceiveData && CurrentRobotTime >= MaxRobotTime / 2)
+                {
+                    ReceiveRobotData();
+                    ReceiveData = false;
+                }
             }
-            else if (ReceiveData && CurrentRobotTime >= MaxRobotTime / 2)
-            {
-                ReceiveRobotData();
-                ReceiveData = false;
-            }
-            else if (CurrentRobotTime >= MaxRobotTime)
+            
+            if (CurrentRobotTime >= MaxRobotTime)
             {
                 nextRobot = (nextRobot + 1) % numRobots;
                 CurrentRobotTime = 0.0f;
@@ -113,5 +128,26 @@ public class DroneController : MonoBehaviour
         RobotPathHistory[nextRobot] = Robots[nextRobot].gameObject.GetComponent<RobotController>().GetPathHistory(RobotPathIndices[nextRobot]);
         RobotPathIndices[nextRobot] = RobotPathHistory[nextRobot].Count - 1;
         RobotPlannedPathIndices[nextRobot] = Robots[nextRobot].gameObject.GetComponent<RobotController>().GetPathIndex();
+    }
+
+    void CheckMoveNow()
+    {
+        CanMove = true;
+        for (int i = 0; i < numRobots; i++)
+        {
+            CanMove = CanMove && !Robots[i].gameObject.GetComponent<RobotController>().GetMoveNow();
+        }
+
+        if (CanMove)
+        {
+            CurrentTime += 1;
+            if (CurrentTime > Runtime)
+                CompleteSimulation();
+
+            for (int i = 0; i < numRobots; i++)
+            {
+                Robots[i].gameObject.GetComponent<RobotController>().SetMoveNow(true);
+            }
+        }
     }
 }

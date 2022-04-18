@@ -7,6 +7,7 @@ public class RobotInfo : MonoBehaviour
     public GameObject Grid;
 
     public int Runtime = 0;
+    public bool DoSendData = false;
     public bool DoAdjustPath = false;
     public int GridSize = 0;
     public int PathLength = 0;
@@ -47,4 +48,10 @@ public class RobotInfo : MonoBehaviour
     {
         return DoAdjustPath;
     }
+
+    public bool GetDoSendData()
+    {
+        return DoSendData;
+    }
+
 }

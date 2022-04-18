@@ -27,12 +27,19 @@ public class RobotController : MonoBehaviour
 
     bool DoAdjustPath;
     int NumRobotCollisions;
+    public bool MoveNow;
+
+    System.Random rand;
+    int RandSeed;
 
     // Start is called before the first frame update
     void Start()
     {
         DoAdjustPath = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoAdjustPath();
-        Random.InitState(RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
+        MoveNow = true;
+        //Random.InitState(RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
+        RandSeed = RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed();
+        rand = new System.Random(RandSeed);
         NumRobotCollisions = 0;
 
         // SearchGrid
@@ -106,6 +113,16 @@ public class RobotController : MonoBehaviour
         return NumRobotCollisions;
     }
 
+    public bool GetMoveNow()
+    {
+        return MoveNow;
+    }
+
+    public void SetMoveNow(bool newValue)
+    {
+        MoveNow = newValue;
+    }
+
     public void UpdateGrid(GameObject otherRobot, List<Vector2> otherPathHistory, List<Vector2> otherPlannedPath, int otherIdx)
     {
         // Store robots, plannedpaths, and get their index
@@ -129,10 +146,21 @@ public class RobotController : MonoBehaviour
         {
             int otherX = (int)otherPathHistory[i].x;
             int otherZ = (int)otherPathHistory[i].y;
-            SearchGrid[otherX][otherZ] = otherRobot.GetComponent<RobotController>().GetGridValue(otherX, otherZ);
+            SearchGrid[otherX][otherZ] = Mathf.Max(1, SearchGrid[otherX][otherZ]);
             if (GoalLocations.Contains(new Vector2(otherX, otherZ)))
                 GoalLocations.Remove(new Vector2(otherX, otherZ));
         }
+
+        /*
+        for (int i = 0; i < otherPlannedPath.Count; i++)
+        {
+            int otherX = (int)otherPlannedPath[i].x;
+            int otherZ = (int)otherPlannedPath[i].y;
+            SearchGrid[otherX][otherZ] = Mathf.Max(1, SearchGrid[otherX][otherZ]);
+            if (GoalLocations.Contains(new Vector2(otherX, otherZ)))
+                GoalLocations.Remove(new Vector2(otherX, otherZ));
+        }       
+        */
 
         if (DoAdjustPath)
             AdjustPath();
@@ -150,21 +178,26 @@ public class RobotController : MonoBehaviour
 
         if (collider.gameObject.tag == "Obstacle")
         {
+            this.transform.parent.GetChild(0).gameObject.GetComponent<GridController>().ChangeGrid(PlannedX, PlannedZ, 2);
             SearchGrid[PlannedX][PlannedZ] = 2;
             if (PathHistory[PathHistory.Count - 1] != new Vector2(PlannedX, PlannedZ))
                 PathHistory.Add(new Vector2(PlannedX, PlannedZ));
             if (GoalLocations.Contains(new Vector2(PlannedX, PlannedZ)))
                 GoalLocations.Remove(new Vector2(PlannedX, PlannedZ));
-            // remove the collision location
-            PlannedPath.RemoveAt(PathIdx);
-            // insert new search at current index
-            PlannedPath.InsertRange(PathIdx, AstarSearch(PlannedPath[PathIdx - 1], PlannedPath[PathIdx]));
-            // remove double of previous location
-            PlannedPath.RemoveAt(PathIdx - 1);
+            if (PathIdx < PlannedPath.Count - 2)
+            {
+                // remove the collision location
+                PlannedPath.RemoveAt(PathIdx);
+                // insert new search at current index
+                PlannedPath.InsertRange(PathIdx, AstarSearch(PlannedPath[PathIdx - 1], PlannedPath[PathIdx]));
+                // remove double of previous location
+                PlannedPath.RemoveAt(PathIdx - 1);
+            }            
         }
         else
         {
             NumRobotCollisions++;
+            /*
             PlannedPath = new List<Vector2>();
             PlannedPath.Add(new Vector2(StartX, StartZ));
             for (int i = 0; i < PathLength; i++)
@@ -173,6 +206,16 @@ public class RobotController : MonoBehaviour
                 PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
             }
             PathIdx = 0;
+            */
+            if (PathIdx < PlannedPath.Count - 2)
+            {
+                // remove the collision location
+                PlannedPath.RemoveAt(PathIdx);
+                // insert new search at current index
+                PlannedPath.InsertRange(PathIdx, AstarSearch(PlannedPath[PathIdx - 1], PlannedPath[PathIdx]));
+                // remove double of previous location
+                PlannedPath.RemoveAt(PathIdx - 1);
+            }
         }
 
         if (DoAdjustPath)
@@ -244,13 +287,17 @@ public class RobotController : MonoBehaviour
         Vector3 localTarget = new Vector3(PlannedX, 1, PlannedZ);
         if (this.transform.localPosition == localTarget)
         {
+            MoveNow = false;
             PathIdx += 1;
             MoveOtherIndices();
 
             if (GoalLocations.Contains(new Vector2(PlannedX, PlannedZ)))
                 GoalLocations.Remove(new Vector2(PlannedX, PlannedZ));
-            if (SearchGrid[PlannedX][PlannedZ] == 0)
+            if (SearchGrid[PlannedX][PlannedZ] != 2)
+            {
+                this.transform.parent.GetChild(0).gameObject.GetComponent<GridController>().ChangeGrid(PlannedX, PlannedZ, 1);
                 SearchGrid[PlannedX][PlannedZ] = 1;
+            }                
 
             if (PathHistory[PathHistory.Count - 1] != new Vector2(PlannedX, PlannedZ))
                 PathHistory.Add(new Vector2(PlannedX, PlannedZ));
@@ -265,7 +312,7 @@ public class RobotController : MonoBehaviour
                     PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
                 }
                 PathIdx = 0;
-                MoveOtherIndices();
+                //MoveOtherIndices();
                 if (DoAdjustPath)
                     AdjustPath();
             }
@@ -274,22 +321,26 @@ public class RobotController : MonoBehaviour
 
     void MoveAlongPath_Astar()
     {
-        int PlannedX = (int)PlannedPath[PathIdx].x;
-        int PlannedZ = (int)PlannedPath[PathIdx].y;
-        Vector3 localTarget = new Vector3(PlannedX, 1, PlannedZ);
-        Vector3 globalTarget = localTarget + this.transform.parent.position;
-        this.transform.position = Vector3.MoveTowards(this.transform.position, globalTarget, Speed * Time.deltaTime);
+        if (MoveNow)
+        {
+            int PlannedX = (int)PlannedPath[PathIdx].x;
+            int PlannedZ = (int)PlannedPath[PathIdx].y;
+            Vector3 localTarget = new Vector3(PlannedX, 1, PlannedZ);
+            Vector3 globalTarget = localTarget + this.transform.parent.position;
+            this.transform.position = Vector3.MoveTowards(this.transform.position, globalTarget, Speed * Time.deltaTime);
+        }        
     }
 
     Vector2 GetRandomGoal()
     {
+        rand = new System.Random(RandSeed);
         if (GoalLocations.Count > 0)
         {
-            return GoalLocations[Random.Range(0, GoalLocations.Count)];
+            return GoalLocations[rand.Next(GoalLocations.Count)];
         }
 
-        int RandomX = (int)Random.Range(0, GridSize);
-        int RandomZ = (int)Random.Range(0, GridSize);
+        int RandomX = rand.Next(GridSize);
+        int RandomZ = rand.Next(GridSize);
         return new Vector2(RandomX, RandomZ);
     }
 
@@ -345,7 +396,7 @@ public class RobotController : MonoBehaviour
                     gScore[neighbor] = tempGScore;
                     // fScore = gScore + heuristic + try to avoid (when possible) going over places you've already been
                     fScore[neighbor] = tempGScore + Manhattan(neighbor, goal) 
-                        + (SearchGrid[(int)neighbor.x][(int)neighbor.y] * 1000);
+                        + (SearchGrid[(int)neighbor.x][(int)neighbor.y] * 10000);
                     while (toExplore.ContainsKey(fScore[neighbor]))
                         fScore[neighbor] += 0.001f;
                     toExplore.Add(fScore[neighbor], neighbor);
@@ -390,11 +441,11 @@ public class RobotController : MonoBehaviour
 
     void CreateRandomPath()
     {
-        int direction = Random.Range(0, 4);
+        int direction = rand.Next(4);
         PlannedPath[0] = NextLocation(direction, new Vector2(currentX, currentZ));
         for (int i = 1; i < PathLength; i++)
         {
-            direction = Random.Range(0, 4);
+            direction = rand.Next(4);
             PlannedPath[i] = NextLocation(direction, PlannedPath[i - 1]);
         }
     }
@@ -464,18 +515,18 @@ public class RobotController : MonoBehaviour
             {
                 PlannedPath[i - 1] = PlannedPath[i];
             }
-            PlannedPath[PathLength - 1] = NextLocation(Random.Range(0, 4), PlannedPath[PathLength - 2]);
+            PlannedPath[PathLength - 1] = NextLocation(rand.Next(4), PlannedPath[PathLength - 2]);
         }
     }
 
     void CreateSemiRandomPath()
     {
-        int direction = Random.Range(0, 4);
+        int direction = rand.Next(4);
         PlannedPath[0] = NextLocation(direction, new Vector2(currentX, currentZ));
-
+        
         for (int i = 1; i < PathLength; i++)
         {
-            direction = Random.Range(0, 4);
+            direction = rand.Next(4);
             PlannedPath[i] = NextLocation(direction, PlannedPath[i - 1]);
         }
     }

@@ -1,35 +1,51 @@
 =======================================
 5 Robots, Seed 42
 =======================================
-600 seconds, 100x100, No AdjustPath()
-66.41% explored
-Collisions: 9, 9, 4, 2, 6
+1000 moves, 100x100, No SendData(), No AdjustPath()
+32.23% explored
+Collisions: 10
 
-600 seconds, 100x100, With AdjustPath()
-68.96% explored
-Collisions: 1, 3, 4, 4, 0
+1000 moves, 100x100, With SendData(), No AdjustPath()
+33.08% explored
+Collisions: 0
+
+1000 moves, 100x100, With SendData(), With AdjustPath()
+31.98% explored
+Collisions: 0
 =======================================
-800 seconds, 100x100, No AdjustPath()
-74.91% explored
-Collisions: 10, 3, 3, 8, 4
+4000 moves, 100x100, No SendData(), No AdjustPath()
+55.94% explored
+Collisions: 16
 
-800 seconds, 100x100, With AdjustPath()
-77.08% explored
-Collisions: 1, 1, 4, 5, 3
+4000 moves, 100x100, With SendData(), No AdjustPath()
+77.19% explored
+Collisions: 4
+
+4000 moves, 100x100, With SendData(), With AdjustPath()
+75.70% explored
+Collisions: 0
 =======================================
-1000 seconds, 100x100, No AdjustPath()
-81.23% explored
-Collisions: 5, 2, 8, 13, 8
+5000 moves, 100x100, No SendData(), No AdjustPath()
+61.67% explored
+Collisions: 24
 
-1000 seconds, 100x100, With AdjustPath()
-83.47% explored
-Collisions: 1, 4, 4, 4, 3
+5000 moves, 100x100, With SendData(), No AdjustPath()
+81.64% explored
+Collisions: 6
+
+5000 moves, 100x100, With SendData(), With AdjustPath()
+86.89% explored
+Collisions: 2
 =======================================
-800 seconds, 150x150, No AdjustPath()
-46.11% explored
-Collisions: 1, 1, 4, 3, 3
+6000 moves, 100x100, No SendData(), No AdjustPath()
+66.75% explored
+Collisions: 34
 
-800 seconds, 150x150, With AdjustPath()
-46.48% explored
-Collisions: 1, 0, 0, 1, 0
+6000 moves, 100x100, With SendData(), No AdjustPath()
+% explored
+Collisions: 
+
+6000 moves, 100x100, With SendData(), With AdjustPath()
+95.36% explored
+Collisions: 18
 =======================================
