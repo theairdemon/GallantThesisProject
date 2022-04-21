@@ -1,5 +1,11 @@
 =======================================
+---------------------------------------
+=======================================
 5 Robots, Seed 42
+=======================================
+---------------------------------------
+=======================================
+100x100 grid
 =======================================
 1000 moves, 100x100, No SendData(), No AdjustPath()
 32.23% explored
@@ -42,10 +48,26 @@ Collisions: 2
 Collisions: 34
 
 6000 moves, 100x100, With SendData(), No AdjustPath()
+91.20% explored
+Collisions: 14
+
+6000 moves, 100x100, With SendData(), With AdjustPath()
+91.11% explored
+Collisions: 14
+=======================================
+---------------------------------------
+=======================================
+150x150 grid
+=======================================
+8000 moves, 150x150, No SendData(), No AdjustPath()
 % explored
 Collisions: 
 
-6000 moves, 100x100, With SendData(), With AdjustPath()
-95.36% explored
-Collisions: 18
+8000 moves, 150x150, With SendData(), No AdjustPath()
+% explored
+Collisions: 
+
+8000 moves, 150x150, With SendData(), With AdjustPath()
+% explored
+Collisions: 
 =======================================

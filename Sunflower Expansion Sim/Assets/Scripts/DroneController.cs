@@ -1,6 +1,9 @@
 using System.Collections;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEditor;
 
 public class DroneController : MonoBehaviour
 {
@@ -19,8 +22,10 @@ public class DroneController : MonoBehaviour
     private int nextRobot;
     private float CurrentRobotTime = 0.0f;
     private bool ReceiveData = true;
-    private bool DoSendData;
+    private bool DoSendData = false;
     private bool CanMove;
+    private string FilePath = "";
+    private int MaxIterations;
 
     // Start is called before the first frame update
     void Start()
@@ -28,6 +33,7 @@ public class DroneController : MonoBehaviour
         DoSendData = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoSendData();
         Runtime = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRuntime();
         CurrentTime = 0;
+        MaxIterations = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetMaxIterations();
         // estimating the speed multiplier in the air vs water
         Speed = (int)SpeedMult * this.transform.parent.gameObject.GetComponent<RobotInfo>().GetSpeed();
 
@@ -48,26 +54,26 @@ public class DroneController : MonoBehaviour
         }
         nextRobot = 0;
 
-        //StartCoroutine(CompleteSimulation());
-    }
-
-    public void CompleteSimulation()
-    {
-        //yield return new WaitForSeconds(Runtime); //wait 5 seconds
-        //Application.Quit();
-        Debug.Log("Ran for " + Runtime.ToString() + " moves");
-        Debug.Log("Percent Explored:");
-        Debug.Log(this.transform.parent.GetChild(0).gameObject.GetComponent<GridController>().PercentCompletion().ToString("F2"));
-        Debug.Log("Robot collisions:");
-        int totalCollisions = 0;
-        for (int i = 0; i < numRobots; i++)
+        if (!PlayerPrefs.HasKey("FilePath"))
         {
-            totalCollisions += Robots[i].gameObject.GetComponent<RobotController>().GetCollisions();
-            Debug.Log("#" + (i + 1).ToString() + ": " + Robots[i].gameObject.GetComponent<RobotController>().GetCollisions().ToString());
+            FilePath = "Assets/Outputs/" + numRobots.ToString() + "Robots_" +
+                Mathf.Floor((float)(System.DateTime.Now.ToUniversalTime() - System.DateTime.Parse("04/18/2022 00:00:00").ToUniversalTime()).TotalSeconds).ToString() + ".txt";
+            PlayerPrefs.SetString("FilePath", FilePath);
         }
-        Debug.Log("Total Collisions: " + totalCollisions.ToString());
+        else
+        {
+            FilePath = PlayerPrefs.GetString("FilePath");
+        }
 
-        Debug.Break();
+        // Keys: TimesRun and DoSendData
+        if (!PlayerPrefs.HasKey("TimesRun"))
+            PlayerPrefs.SetInt("TimesRun", 0);
+
+        if (!PlayerPrefs.HasKey("AdjustPath"))
+            PlayerPrefs.SetInt("AdjustPath", 0);
+        else
+            DoSendData = PlayerPrefs.GetInt("AdjustPath") > 0;
+
     }
 
     // Update is called once per frame
@@ -149,5 +155,73 @@ public class DroneController : MonoBehaviour
                 Robots[i].gameObject.GetComponent<RobotController>().SetMoveNow(true);
             }
         }
+    }
+
+    public void CompleteSimulation()
+    {
+        //yield return new WaitForSeconds(Runtime); //wait 5 seconds
+        //Debug.Log("Ran for " + Runtime.ToString() + " moves");
+        float PercentCompletion = this.transform.parent.GetChild(0).gameObject.GetComponent<GridController>().PercentCompletion();
+        //Debug.Log("Percent explored: " + PercentCompletion.ToString("F2"));
+        //Debug.Log("Robot collisions:");
+        int totalCollisions = 0;
+        for (int i = 0; i < numRobots; i++)
+        {
+            totalCollisions += Robots[i].gameObject.GetComponent<RobotController>().GetCollisions();
+            //Debug.Log("#" + (i + 1).ToString() + ": " + Robots[i].gameObject.GetComponent<RobotController>().GetCollisions().ToString());
+        }
+        //Debug.Log("Total Collisions: " + totalCollisions.ToString());
+
+        Debug.Log("Iteration: " + (11 * PlayerPrefs.GetInt("AdjustPath") + PlayerPrefs.GetInt("TimesRun")).ToString() + "\n" +
+            "Ran for " + Runtime.ToString() + " moves\n" +
+            "Percent explored: " + PercentCompletion.ToString("F2") + "\n" +
+            "Total Collisions: " + totalCollisions.ToString());
+
+
+        // File format: numRobots, Runtime, DoSendData, DoAdjustPath, PercentCompletion, totalCollisions 
+        // File management help: https://answers.unity.com/questions/1067541/how-to-append-a-string-to-a-file-if-the-file-exist.html 
+        //Debug.Log(FilePath);
+        if (!File.Exists(FilePath))
+        {
+            using (StreamWriter write = File.CreateText(FilePath))
+            {
+                write.WriteLine(numRobots.ToString() + "," +
+                    Runtime.ToString() + "," +
+                    DoSendData.ToString() + "," +
+                    (PlayerPrefs.GetInt("AdjustPath") > 1).ToString() + "," +
+                    PercentCompletion.ToString("F2") + "," +
+                    totalCollisions.ToString());
+                write.Close();
+            }
+        }
+        else
+        {
+            using (StreamWriter write = File.AppendText(FilePath))
+            {
+                write.WriteLine(numRobots.ToString() + "," +
+                    Runtime.ToString() + "," +
+                    DoSendData.ToString() + "," +
+                    (PlayerPrefs.GetInt("AdjustPath") > 1).ToString() + "," +
+                    PercentCompletion.ToString("F2") + "," +
+                    totalCollisions.ToString());
+                write.Close();
+            }
+        }
+
+
+        PlayerPrefs.SetInt("TimesRun", PlayerPrefs.GetInt("TimesRun") + 1);
+        if (PlayerPrefs.GetInt("TimesRun") > MaxIterations)
+        {
+            PlayerPrefs.SetInt("TimesRun", 0);
+            PlayerPrefs.SetInt("AdjustPath", PlayerPrefs.GetInt("AdjustPath") + 1);
+        }
+
+        if (PlayerPrefs.GetInt("AdjustPath") > 2)
+        {
+            PlayerPrefs.DeleteAll();
+            Debug.Break();
+        }            
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

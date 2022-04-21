@@ -35,9 +35,12 @@ public class RobotController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        DoAdjustPath = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoAdjustPath();
+        if (PlayerPrefs.HasKey("AdjustPath"))
+            DoAdjustPath = PlayerPrefs.GetInt("AdjustPath") > 1;
+        else
+            DoAdjustPath = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetDoAdjustPath();
+
         MoveNow = true;
-        //Random.InitState(RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
         RandSeed = RandomModifer + this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed();
         rand = new System.Random(RandSeed);
         NumRobotCollisions = 0;
