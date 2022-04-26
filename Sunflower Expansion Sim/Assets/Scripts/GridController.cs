@@ -26,7 +26,6 @@ public class GridController : MonoBehaviour
     {
         //Random.InitState(this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
         rand = new System.Random(this.transform.parent.gameObject.GetComponent<RobotInfo>().GetRandomSeed());
-
         GridSize = this.transform.parent.gameObject.GetComponent<RobotInfo>().GetGridSize();
         SearchGrid = new int[GridSize][];
         GridObjects = new GameObject[GridSize][];

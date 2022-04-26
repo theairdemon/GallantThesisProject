@@ -154,17 +154,6 @@ public class RobotController : MonoBehaviour
                 GoalLocations.Remove(new Vector2(otherX, otherZ));
         }
 
-        /*
-        for (int i = 0; i < otherPlannedPath.Count; i++)
-        {
-            int otherX = (int)otherPlannedPath[i].x;
-            int otherZ = (int)otherPlannedPath[i].y;
-            SearchGrid[otherX][otherZ] = Mathf.Max(1, SearchGrid[otherX][otherZ]);
-            if (GoalLocations.Contains(new Vector2(otherX, otherZ)))
-                GoalLocations.Remove(new Vector2(otherX, otherZ));
-        }       
-        */
-
         if (DoAdjustPath)
             AdjustPath();
     }
@@ -174,6 +163,9 @@ public class RobotController : MonoBehaviour
     // ===================================
     private void OnTriggerEnter(Collider collider)
     {
+        if (PathHistory.Count <= 1)
+            return;
+
         int StartX = (int)PathHistory[PathHistory.Count - 1].x;
         int StartZ = (int)PathHistory[PathHistory.Count - 1].y;
         int PlannedX = (int)PlannedPath[PathIdx].x;
@@ -200,16 +192,6 @@ public class RobotController : MonoBehaviour
         else
         {
             NumRobotCollisions++;
-            /*
-            PlannedPath = new List<Vector2>();
-            PlannedPath.Add(new Vector2(StartX, StartZ));
-            for (int i = 0; i < PathLength; i++)
-            {
-                Vector2 RandomGoal = GetRandomGoal();
-                PlannedPath.AddRange(AstarSearch(PlannedPath[PlannedPath.Count - 1], RandomGoal));
-            }
-            PathIdx = 0;
-            */
             if (PathIdx < PlannedPath.Count - 2)
             {
                 // remove the collision location

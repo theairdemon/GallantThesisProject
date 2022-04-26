@@ -9,6 +9,7 @@ public class RobotInfo : MonoBehaviour
     public int Runtime = 0;
     public bool DoSendData = false;
     public bool DoAdjustPath = false;
+    public bool PrioritizeDrone = false;
     public int MaxIterations = 0;
     public int GridSize = 0;
     public int PathLength = 0;
@@ -58,5 +59,10 @@ public class RobotInfo : MonoBehaviour
     public int GetMaxIterations()
     {
         return MaxIterations;
+    }
+
+    public bool GetPrioritizeDrone()
+    {
+        return PrioritizeDrone;
     }
 }
