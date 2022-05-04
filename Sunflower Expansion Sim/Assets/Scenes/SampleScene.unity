@@ -720,7 +720,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SpeedMult: 5
-  MaxRobotTime: 3
+  MaxRobotTime: 10
 --- !u!1 &693443837
 GameObject:
   m_ObjectHideFlags: 0

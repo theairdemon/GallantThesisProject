@@ -18,7 +18,6 @@ public class RobotController : MonoBehaviour
     List<Vector2> PathHistory;
     List<Vector2> GoalLocations;
     public int PathIdx = 0;
-    
 
     // Information received from drone about other robots
     List<List<Vector2>> OtherPlannedPaths;
